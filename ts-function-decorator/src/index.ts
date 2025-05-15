@@ -133,15 +133,27 @@ function transformAst(this: typeof ts, context: TransformationContext) {
             }
           }
 
-          // Create a parameter for the args with the same type as the original function's first parameter
-          const argsParam = context.factory.createParameterDeclaration(
-            undefined,
-            undefined,
-            "args",
-            undefined,
-            originalFunction.parameters[0].type,
-            undefined,
-          );
+          // Create parameters for the outer function
+          const argsParams = originalFunction.parameters.map((param, index) => {
+            const paramName = tsInstance.isIdentifier(param.name)
+              ? param.name.text // Use original name for non-destructured params
+              : `args${index + 1}`; // Use argsN for destructured params
+
+            return {
+              param: context.factory.createParameterDeclaration(
+                undefined,
+                undefined,
+                paramName,
+                undefined,
+                param.type ??
+                  context.factory.createKeywordTypeNode(
+                    tsInstance.SyntaxKind.AnyKeyword,
+                  ),
+                undefined,
+              ),
+              name: paramName,
+            };
+          });
 
           // Create the final function declaration that calls the decorated function
           return context.factory.createFunctionDeclaration(
@@ -151,14 +163,16 @@ function transformAst(this: typeof ts, context: TransformationContext) {
               ? context.factory.createIdentifier(originalFunction.name.text)
               : undefined,
             originalFunction.typeParameters,
-            [argsParam],
+            argsParams.map((p) => p.param),
             originalFunction.type,
             context.factory.createBlock([
               context.factory.createReturnStatement(
                 context.factory.createCallExpression(
                   transformedFunction,
                   undefined,
-                  [context.factory.createIdentifier("args")],
+                  argsParams.map((p) =>
+                    context.factory.createIdentifier(p.name),
+                  ),
                 ),
               ),
             ]),

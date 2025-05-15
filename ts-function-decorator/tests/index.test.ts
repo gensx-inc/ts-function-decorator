@@ -77,19 +77,20 @@ describe("Decorator Transformer", () => {
     });
 
     const transformedProgram = transformer(program, undefined, {}, { ts });
-
-    // Get the transformed source file
     const transformedSourceFile = transformedProgram.getSourceFile(fileName);
     expect(transformedSourceFile).toBeDefined();
 
-    // Verify the transformation
     const printer = ts.createPrinter();
     const transformedCode = printer.printFile(transformedSourceFile!);
 
-    // Check for the wrapper function
-    expect(transformedCode).toContain("function add(args");
+    // Check for the wrapper function with original parameters
+    expect(transformedCode).toContain(
+      "function add(a: number, b: number): number",
+    );
     // Check for the decorator application wrapping the original function
     expect(transformedCode).toContain("return log(function add(");
+    // Check that parameters are passed through
+    expect(transformedCode).toContain(")(a, b)");
   });
 
   it("should handle async functions with decorators", () => {
@@ -119,19 +120,20 @@ describe("Decorator Transformer", () => {
     });
 
     const transformedProgram = transformer(program, undefined, {}, { ts });
-
-    // Get the transformed source file
     const transformedSourceFile = transformedProgram.getSourceFile(fileName);
     expect(transformedSourceFile).toBeDefined();
 
-    // Verify the transformation
     const printer = ts.createPrinter();
     const transformedCode = printer.printFile(transformedSourceFile!);
 
-    // Check for the wrapper async function
-    expect(transformedCode).toContain("async function fetchData(args");
+    // Check for the wrapper async function with original parameters
+    expect(transformedCode).toContain(
+      "async function fetchData(id: number): Promise<string>",
+    );
     // Check for the decorator application wrapping the original async function
     expect(transformedCode).toContain("return log(async function fetchData(");
+    // Check that parameters are passed through
+    expect(transformedCode).toContain(")(id)");
   });
 
   it("should handle multiple decorators", () => {
@@ -169,21 +171,22 @@ describe("Decorator Transformer", () => {
     });
 
     const transformedProgram = transformer(program, undefined, {}, { ts });
-
-    // Get the transformed source file
     const transformedSourceFile = transformedProgram.getSourceFile(fileName);
     expect(transformedSourceFile).toBeDefined();
 
-    // Verify the transformation
     const printer = ts.createPrinter();
     const transformedCode = printer.printFile(transformedSourceFile!);
 
-    // Check for the wrapper function
-    expect(transformedCode).toContain("function processNumber(args");
+    // Check for the wrapper function with original parameters
+    expect(transformedCode).toContain(
+      "function processNumber(n: number): number",
+    );
     // Check for the decorator application wrapping the original function with both decorators
     expect(transformedCode).toContain(
       "return log(validate(function processNumber(",
     );
+    // Check that parameters are passed through
+    expect(transformedCode).toContain("))(n)");
   });
 
   it("should handle a decorator factory", () => {
@@ -217,8 +220,11 @@ describe("Decorator Transformer", () => {
     expect(transformedSourceFile).toBeDefined();
     const printer = ts.createPrinter();
     const transformedCode = printer.printFile(transformedSourceFile!);
-    expect(transformedCode).toContain("function add(args");
+    expect(transformedCode).toContain(
+      "function add(a: number, b: number): number",
+    );
     expect(transformedCode).toContain('return logWith("ADD:")(function add(');
+    expect(transformedCode).toContain(")(a, b)");
   });
 
   it("should handle multiple decorator factories", () => {
@@ -261,10 +267,13 @@ describe("Decorator Transformer", () => {
     expect(transformedSourceFile).toBeDefined();
     const printer = ts.createPrinter();
     const transformedCode = printer.printFile(transformedSourceFile!);
-    expect(transformedCode).toContain("function processNumber(args");
+    expect(transformedCode).toContain(
+      "function processNumber(n: number): number",
+    );
     expect(transformedCode).toContain(
       'return logWith("PROC:")(validateWith(10)(function processNumber(',
     );
+    expect(transformedCode).toContain("))(n)");
   });
 
   it("should handle a mix of decorator factories and plain decorators", () => {
@@ -304,9 +313,446 @@ describe("Decorator Transformer", () => {
     expect(transformedSourceFile).toBeDefined();
     const printer = ts.createPrinter();
     const transformedCode = printer.printFile(transformedSourceFile!);
-    expect(transformedCode).toContain("function mixed(args");
+    expect(transformedCode).toContain("function mixed(n: number): number");
     expect(transformedCode).toContain(
       'return logWith("MIX:")(plain(function mixed(',
     );
+    expect(transformedCode).toContain("))(n)");
+  });
+
+  it("should handle functions with multiple parameters", () => {
+    const sourceCode = `
+      function log(target: any) {
+        return function(...args: any[]) {
+          console.log('Calling function with args:', args);
+          return target.apply(this, args);
+        };
+      }
+
+      @log
+      function complexOperation(x: number, y: string, z: boolean): string {
+        return \`\${x} - \${y} - \${z}\`;
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test-multi-params.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    // Check for the wrapper function with parameters
+    expect(transformedCode).toContain(
+      "function complexOperation(x: number, y: string, z: boolean)",
+    );
+    // Check for the decorator application wrapping the original function
+    expect(transformedCode).toContain("return log(function complexOperation(");
+    // Check that all parameters are passed through
+    expect(transformedCode).toContain(")(x, y, z)");
+  });
+
+  it("should handle functions with no parameters", () => {
+    const sourceCode = `
+      function log(target: any) {
+        return function(...args: any[]) {
+          console.log('Calling function with args:', args);
+          return target.apply(this, args);
+        };
+      }
+
+      @log
+      function noParams(): string {
+        return "hello";
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test-no-params.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    // Check for the wrapper function without parameters
+    expect(transformedCode).toContain("function noParams()");
+    // Check for the decorator application wrapping the original function
+    expect(transformedCode).toContain("return log(function noParams(");
+  });
+
+  it("should handle functions with type parameters", () => {
+    const sourceCode = `
+      function log<T>(target: any) {
+        return function(...args: any[]) {
+          console.log('Calling function with args:', args);
+          return target.apply(this, args);
+        };
+      }
+
+      @log
+      function genericFunction<T>(value: T): T {
+        return value;
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test-generic.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    // Check for the wrapper function with type parameter
+    expect(transformedCode).toContain("function genericFunction<T>");
+    // Check for the decorator application wrapping the original function
+    expect(transformedCode).toContain("return log(function genericFunction<T>");
+    // Check that the parameter is passed through
+    expect(transformedCode).toContain(")(value)");
+  });
+
+  it("should handle functions with complex return types", () => {
+    const sourceCode = `
+      function log(target: any) {
+        return function(...args: any[]) {
+          console.log('Calling function with args:', args);
+          return target.apply(this, args);
+        };
+      }
+
+      interface ComplexType {
+        id: number;
+        name: string;
+      }
+
+      @log
+      function complexReturn(): ComplexType {
+        return { id: 1, name: "test" };
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test-complex-return.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    expect(transformedCode).toContain("function complexReturn(): ComplexType");
+    expect(transformedCode).toContain("function complexReturn()");
+  });
+
+  it("should handle functions with rest parameters", () => {
+    const sourceCode = `
+      function log(target: any) {
+        return function(...args: any[]) {
+          console.log('Calling function with args:', args);
+          return target.apply(this, args);
+        };
+      }
+
+      @log
+      function withRestParams(...numbers: number[]): number {
+        return numbers.reduce((sum, n) => sum + n, 0);
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test-rest-params.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    expect(transformedCode).toContain(
+      "function withRestParams(...numbers: number[]): number",
+    );
+    expect(transformedCode).toContain("return log(function withRestParams(");
+    expect(transformedCode).toContain(")(numbers)");
+  });
+
+  it("should handle functions with optional parameters", () => {
+    const sourceCode = `
+      function log(target: any) {
+        return function(...args: any[]) {
+          console.log('Calling function with args:', args);
+          return target.apply(this, args);
+        };
+      }
+
+      @log
+      function withOptionalParams(required: string, optional?: number): string {
+        return optional ? \`\${required}-\${optional}\` : required;
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test-optional-params.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    expect(transformedCode).toContain(
+      "function withOptionalParams(required: string, optional?: number): string",
+    );
+    expect(transformedCode).toContain(
+      "return log(function withOptionalParams(",
+    );
+    expect(transformedCode).toContain(")(required, optional)");
+  });
+
+  it("should handle decorator factory with no arguments", () => {
+    const sourceCode = `
+      function logWith() {
+        return function(target: any) {
+          return function(...args: any[]) {
+            console.log('Calling function with args:', args);
+            return target.apply(this, args);
+          };
+        };
+      }
+
+      @logWith()
+      function noArgs(): string {
+        return "hello";
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test-factory-no-args.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    expect(transformedCode).toContain("function noArgs()");
+    expect(transformedCode).toContain("return logWith()(function noArgs(");
+  });
+
+  it("should handle decorator factory with multiple arguments", () => {
+    const sourceCode = `
+      function logWith(prefix: string, suffix: string, options: { debug: boolean }) {
+        return function(target: any) {
+          return function(...args: any[]) {
+            if (options.debug) {
+              console.log(prefix, args, suffix);
+            }
+            return target.apply(this, args);
+          };
+        };
+      }
+
+      @logWith("START:", "END", { debug: true })
+      function multiArgs(x: number, y: string): string {
+        return \`\${x}-\${y}\`;
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test-factory-multi-args.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    expect(transformedCode).toContain(
+      "function multiArgs(x: number, y: string): string",
+    );
+    expect(transformedCode).toContain(
+      'return logWith("START:", "END", { debug: true })(function multiArgs(',
+    );
+    expect(transformedCode).toContain(")(x, y)");
+  });
+
+  it("should handle decorator factory with type parameters", () => {
+    const sourceCode = `
+      function logWith<T>(type: new () => T) {
+        return function(target: any) {
+          return function(...args: any[]) {
+            console.log('Type:', type.name);
+            return target.apply(this, args);
+          };
+        };
+      }
+
+      class TestClass {}
+
+      @logWith(TestClass)
+      function withTypeParam(): TestClass {
+        return new TestClass();
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test-factory-type-param.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    expect(transformedCode).toContain("function withTypeParam()");
+    expect(transformedCode).toContain(
+      "return logWith(TestClass)(function withTypeParam(",
+    );
+  });
+
+  it("should handle decorator factory with complex argument types", () => {
+    const sourceCode = `
+      interface Config {
+        enabled: boolean;
+        options: {
+          timeout: number;
+          retries: number;
+        };
+      }
+
+      function logWith(config: Config) {
+        return function(target: any) {
+          return function(...args: any[]) {
+            if (config.enabled) {
+              console.log('Config:', config.options);
+            }
+            return target.apply(this, args);
+          };
+        };
+      }
+
+      @logWith({
+        enabled: true,
+        options: {
+          timeout: 1000,
+          retries: 3
+        }
+      })
+      function withComplexConfig(): void {
+        console.log('Executing');
+      }
+    `;
+
+    const fileName = path.resolve(
+      process.cwd(),
+      "test-factory-complex-args.ts",
+    );
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    expect(transformedCode).toContain("function withComplexConfig()");
+    expect(transformedCode).toContain("return logWith({");
+    expect(transformedCode).toContain("enabled: true");
+    expect(transformedCode).toContain("timeout: 1000");
+    expect(transformedCode).toContain("retries: 3");
   });
 });
