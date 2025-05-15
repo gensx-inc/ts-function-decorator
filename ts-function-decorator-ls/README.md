@@ -1,30 +1,23 @@
-# TypeScript Decorator Language Service Plugin
+# TypeScript Function Decorator Language Service Support
 
-This package provides a TypeScript language service plugin that enables real-time transformation of decorated functions in VSCode. It works alongside the `@gensx/tsc-decorator-transformer` package to provide a seamless development experience.
+A TypeScript language service plugin that provides real-time transformation and IntelliSense support for function decorators in your IDE. This plugin works alongside the TypeScript compiler to provide a seamless development experience when working with function decorators.
+
+## Features
+
+- 🔄 **Real-time Transformation**: See decorator transformations as you type
+- 🎯 **IntelliSense Support**: Get accurate type information and autocompletion
+- 🔍 **Type Checking**: Real-time type checking for decorated functions
+- 🚀 **Zero Configuration**: Works out of the box with minimal setup
 
 ## Installation
 
 ```bash
-npm install @gensx/tsc-decorator-language-service
+npm install -D ts-function-decorator-ls
 ```
 
 ## Usage
 
-1. Add the plugin to your `tsconfig.json`:
-
-```json
-{
-  "compilerOptions": {
-    "plugins": [
-      {
-        "name": "@gensx/tsc-decorator-language-service"
-      }
-    ]
-  }
-}
-```
-
-2. Configure VSCode to use the workspace version of TypeScript:
+1. Configure your IDE to use the workspace version of TypeScript:
 
 ```json
 {
@@ -32,31 +25,45 @@ npm install @gensx/tsc-decorator-language-service
 }
 ```
 
-## Features
+2. Add the language service plugin to your `tsconfig.json`:
 
-- Real-time transformation of decorated functions in VSCode
-- Type checking and IntelliSense support for transformed code
-- Seamless integration with the TypeScript compiler
+```json
+{
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "ts-function-decorator-ls"
+      }
+    ]
+  }
+}
+```
 
-## Example
+3. The language service plugin will automatically provide support for function decorators:
 
 ```typescript
-@decorator
+// Create a decorator
+const log = function (fn: Function) {
+  return function (...args: any[]) {
+    console.log('Function called with args:', args);
+    return fn.apply(this, args);
+  };
+};
+
+// Use the decorator
+@log
 function example(arg: string): string {
   return arg;
 }
 ```
 
-The plugin will transform this code in real-time to:
+The plugin will provide:
 
-```typescript
-function example(args: string): string {
-  return decorator((arg: string) => {
-    return arg;
-  })(args);
-}
-```
+- Editor support for function decorators
+- Type checking for decorated functions
+- IntelliSense support for decorator options
+- Error reporting for invalid decorator usage
 
 ## License
 
-MIT
+Apache-2.0
