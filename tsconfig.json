@@ -4,9 +4,7 @@
     "target": "esnext",
     "useDefineForClassFields": true,
     "module": "esnext",
-    "lib": [
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
     "tsBuildInfoFile": ".tsbuildinfo",
     "incremental": true,
     "skipLibCheck": true,
@@ -27,11 +25,6 @@
     "emitDecoratorMetadata": true,
     "baseUrl": "."
   },
-  "include": [
-    "vitest.workspace.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["vitest.workspace.ts"],
+  "exclude": ["node_modules", "dist"]
 }
