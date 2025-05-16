@@ -1,3 +1,12 @@
+/**
+ * @fileoverview
+ * This plugin is used to enable support for function decorators in your IDE.
+ * It is a TypeScript language service plugin that allows you to see how your decorators will transform your functions as you type.
+ *
+ * @author [@gensx](https://github.com/gensx)
+ * @license Apache-2.0
+ */
+
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */

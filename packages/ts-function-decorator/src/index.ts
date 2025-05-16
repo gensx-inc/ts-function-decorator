@@ -1,3 +1,11 @@
+/**
+ * @fileoverview
+ * This plugin is used to transform function decorators into something that the Typescript compiler can handle during compilation.
+ *
+ * @author [@gensx](https://github.com/gensx)
+ * @license Apache-2.0
+ */
+
 /* eslint-disable @typescript-eslint/no-this-alias */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
