@@ -75,18 +75,31 @@ function transformAst(this: typeof ts, context: TransformationContext) {
     return tsInstance.visitEachChild(sourceFile, visit, context);
 
     function visit(node: ts.Node): ts.Node | undefined {
-      if (tsInstance.isFunctionDeclaration(node)) {
-        const decorators = node.modifiers?.filter(
-          (m) => m.kind === tsInstance.SyntaxKind.Decorator,
-        );
+      // Check if the node has decorators
+      const modifiers = (node as any).modifiers;
+      const decorators = modifiers?.filter(
+        (m: any) => m.kind === tsInstance.SyntaxKind.Decorator,
+      );
 
-        if (decorators?.length) {
+      if (decorators?.length) {
+        // Log the node kind and text snippet for debugging
+        // eslint-disable-next-line no-console
+        console.log(
+          "Found decorators on node:",
+          tsInstance.SyntaxKind[node.kind],
+          "-",
+          node.getText().slice(0, 60).replace(/\n/g, " "),
+        );
+        // If it's a function declaration, transform it
+        if (tsInstance.isFunctionDeclaration(node)) {
           const originalFunction = node;
           const preservedModifiers = node.modifiers?.filter(
             (m) => m.kind !== tsInstance.SyntaxKind.Decorator,
           );
 
           // Create the inner function expression
+          // TODO: Support generator functions
+          // TODO: Verify type parameters
           const innerFunction = context.factory.createFunctionExpression(
             preservedModifiers?.some(
               (m) => m.kind === tsInstance.SyntaxKind.AsyncKeyword,
@@ -178,6 +191,8 @@ function transformAst(this: typeof ts, context: TransformationContext) {
             ]),
           );
         }
+        // For non-function declarations, return the node unchanged
+        return node;
       }
 
       return tsInstance.visitEachChild(node, visit, context);

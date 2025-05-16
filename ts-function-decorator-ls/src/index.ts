@@ -6,6 +6,7 @@
 
 import * as ts from "typescript/lib/tsserverlibrary";
 
+// TODO: Error if the decorated thing is not a function
 function init(_mod: { typescript: typeof ts }) {
   function create(info: ts.server.PluginCreateInfo): ts.LanguageService {
     const { languageService } = info;
@@ -30,8 +31,9 @@ function init(_mod: { typescript: typeof ts }) {
       const sourceFile = program.getSourceFile(fileName);
       if (!sourceFile) return [];
 
-      // Find all decorator symbols in the file
+      // Find all decorator symbols in the file and their parent kinds
       const decoratorSymbols = new Set<string>();
+      const decoratorFunctionParents = new Set<ts.Node>();
       ts.forEachChild(sourceFile, function visit(node) {
         if (ts.isDecorator(node)) {
           const decoratorText = node.expression.getText(sourceFile);
@@ -40,9 +42,15 @@ function init(_mod: { typescript: typeof ts }) {
             ? decoratorText.split("(")[0]
             : decoratorText;
           decoratorSymbols.add(decoratorName);
-          console.error(
-            `[tsc-decorator-language-service] Found decorator: ${decoratorName}`,
-          );
+          // Track if the parent is a function declaration
+          if (
+            ts.isFunctionDeclaration(node.parent) ||
+            ts.isMethodDeclaration(node.parent) ||
+            ts.isFunctionExpression(node.parent) ||
+            ts.isArrowFunction(node.parent)
+          ) {
+            decoratorFunctionParents.add(node.parent);
+          }
         }
         ts.forEachChild(node, visit);
       });
@@ -51,31 +59,24 @@ function init(_mod: { typescript: typeof ts }) {
       const originalDiagnostics =
         languageService.getSemanticDiagnostics(fileName);
 
-      console.error(
-        `[tsc-decorator-language-service] Original diagnostics count: ${originalDiagnostics.length}`,
-      );
-      originalDiagnostics.forEach((d) => {
-        const message =
-          typeof d.messageText === "string"
-            ? d.messageText
-            : d.messageText.messageText;
-        console.error(
-          `[tsc-decorator-language-service] Diagnostic: ${message} (code: ${d.code})`,
-        );
-      });
-
-      // Filter out decorator-related errors and unused decorator imports
+      // Filter out decorator-related errors ONLY for function declarations
       const filteredDiagnostics = originalDiagnostics.filter((diagnostic) => {
         const message =
           typeof diagnostic.messageText === "string"
             ? diagnostic.messageText
             : diagnostic.messageText.messageText;
 
-        // Filter out decorator errors
-        if (message.toLowerCase().includes("decorator")) {
-          console.error(
-            `[tsc-decorator-language-service] Filtering out decorator error: ${message}`,
-          );
+        // Only filter out decorator errors if the error is on a function declaration
+        if (
+          message.toLowerCase().includes("decorator") &&
+          diagnostic.start !== undefined &&
+          decoratorFunctionParents.size > 0 &&
+          Array.from(decoratorFunctionParents).some(
+            (fnNode) =>
+              diagnostic.start! >= fnNode.getStart() &&
+              diagnostic.start! < fnNode.getEnd(),
+          )
+        ) {
           return false;
         }
 
@@ -88,14 +89,8 @@ function init(_mod: { typescript: typeof ts }) {
           const match = /'([^']+)' is declared/.exec(message);
           if (match) {
             const symbolName = match[1];
-            console.error(
-              `[tsc-decorator-language-service] Checking unused symbol: ${symbolName}, is decorator: ${decoratorSymbols.has(symbolName)}`,
-            );
-            // Only filter out if the symbol is a decorator
+            // Only filter out if the symbol is a decorator used on a function
             if (decoratorSymbols.has(symbolName)) {
-              console.error(
-                `[tsc-decorator-language-service] Filtering out unused decorator: ${symbolName}`,
-              );
               return false;
             }
           }
@@ -124,10 +119,6 @@ function init(_mod: { typescript: typeof ts }) {
 
         return true;
       });
-
-      console.error(
-        `[tsc-decorator-language-service] Filtered diagnostics count: ${filteredDiagnostics.length}`,
-      );
 
       return filteredDiagnostics;
     };
