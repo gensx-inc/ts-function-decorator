@@ -1,0 +1,46 @@
+name: "🐢 Test and Build Packages"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/**/*"
+  push:
+    branches: [main]
+    paths:
+      - "packages/**/*"
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.x, 20.x, 18.x]
+
+    steps:
+      - name: Checkout 🛬
+        uses: actions/checkout@v4
+      - name: Setup Node ⚙️
+        uses: ./.github/actions/setup-node
+        with:
+          version: ${{ matrix.node-version }}
+
+      - name: Build 📦
+        run: pnpm build
+
+      - name: Test types 🧪
+        run: pnpm test:types
+
+      - name: Run tests 🧪
+        run: pnpm test

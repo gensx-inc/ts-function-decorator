@@ -1,0 +1,102 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "separate-pull-requests": false,
+  "plugins": ["node-workspace"],
+  "packages": {
+    "packages/ts-function-decorator": {
+      "component": "ts-function-decorator",
+      "release-type": "node",
+      "package-name": "ts-function-decorator",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "initial-version": "0.1.0",
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/ts-function-decorator-ls": {
+      "component": "ts-function-decorator-ls",
+      "release-type": "node",
+      "package-name": "ts-function-decorator-ls",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "initial-version": "0.1.0",
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    }
+  },
+  "changelog-sections": [
+    {
+      "type": "feat",
+      "section": "✨ New Features"
+    },
+    {
+      "type": "fix",
+      "section": "🐛 Bug Fixes"
+    },
+    {
+      "type": "chore",
+      "hidden": true,
+      "section": "🧹 Chore"
+    },
+    {
+      "type": "docs",
+      "section": "📚 Documentation"
+    },
+    {
+      "type": "perf",
+      "section": "🚀 Performance"
+    },
+    {
+      "type": "build",
+      "hidden": true,
+      "section": "🛠️ Build"
+    },
+    {
+      "type": "deps",
+      "section": "📦 Dependencies"
+    },
+    {
+      "type": "ci",
+      "hidden": true,
+      "section": "🚦 CI"
+    },
+    {
+      "type": "refactor",
+      "section": "🔄 Refactoring"
+    },
+    {
+      "type": "revert",
+      "section": "🔙 Reverts"
+    },
+    {
+      "type": "style",
+      "hidden": true,
+      "section": "🎨 Styling"
+    },
+    {
+      "type": "test",
+      "hidden": true,
+      "section": "🧪 Tests"
+    }
+  ]
+}

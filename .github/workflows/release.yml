@@ -1,0 +1,59 @@
+name: "🚀 Release Please"
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Ensure this workflow has the necessary permissions
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write # needed for npm provenance
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      cli_released: ${{ steps.release.outputs.releases_created && contains(fromJson(steps.release.outputs.paths_released || '[]'), 'packages/gensx') }}
+    # Only run on pushes to the original repository and not on forks
+    if: |
+      github.repository == 'gensx-inc/ts-function-decorator' &&
+      github.event.repository.fork == false
+
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.PAT_GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # The following steps only run when merging a release PR
+      - name: Checkout 🛬
+        if: ${{ steps.release.outputs.releases_created }}
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup Node ⚙️
+        if: ${{ steps.release.outputs.releases_created }}
+        uses: ./.github/actions/setup-node
+        with:
+          npm_token: ${{ secrets.NPM_TOKEN }}
+
+      - name: Build Packages 🏗️
+        if: ${{ steps.release.outputs.releases_created }}
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: Publish to NPM 🚀
+        if: ${{ steps.release.outputs.releases_created }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          pnpm publish --no-git-checks --access public -r
