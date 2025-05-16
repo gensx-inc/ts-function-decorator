@@ -15,7 +15,7 @@ export default defineConfig({
     silent: "passed-only",
     setupFiles: ["./tests/setup.ts"],
     coverage: {
-      provider: "istanbul",
+      provider: "v8",
       reporter: ["text-summary", "json-summary", "json"],
       reportsDirectory: "coverage",
       include: ["./src/**/*.ts", "./src/**/*.tsx"],
