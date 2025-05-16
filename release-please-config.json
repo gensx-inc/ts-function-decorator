@@ -12,7 +12,7 @@
       "bump-patch-for-minor-pre-major": true,
       "draft": false,
       "prerelease": false,
-      "initial-version": "0.1.0",
+      "initial-version": "0.0.1",
       "include-component-in-tag": true,
       "include-v-in-tag": true,
       "extra-files": [
@@ -32,7 +32,7 @@
       "bump-patch-for-minor-pre-major": true,
       "draft": false,
       "prerelease": false,
-      "initial-version": "0.1.0",
+      "initial-version": "0.0.1",
       "include-component-in-tag": true,
       "include-v-in-tag": true,
       "extra-files": [
