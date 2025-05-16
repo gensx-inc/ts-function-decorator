@@ -1,6 +1,6 @@
 {
   "name": "ts-function-decorator-ls",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "TypeScript language service plugin for handling decorators.",
   "type": "commonjs",
   "main": "./dist/index.js",

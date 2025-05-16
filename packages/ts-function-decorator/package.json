@@ -1,6 +1,6 @@
 {
   "name": "ts-function-decorator",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Transform TS function decorators into wrapped functions.",
   "type": "commonjs",
   "main": "./dist/index.js",
