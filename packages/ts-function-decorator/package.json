@@ -1,6 +1,6 @@
 {
   "name": "ts-function-decorator",
-  "version": "0.0.1-alpha.3",
+  "version": "0.0.1-alpha.4",
   "description": "Transform TS function decorators into wrapped functions.",
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gensx-inc/gensx.git",
+    "url": "https://github.com/gensx-inc/ts-function-decorator.git",
     "directory": "packages/ts-function-decorator"
   },
   "exports": {
