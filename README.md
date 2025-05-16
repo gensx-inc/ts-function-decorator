@@ -9,6 +9,7 @@ A TypeScript ecosystem for enabling and supporting function decorators at compil
 A TypeScript transformer that enables function decorators to transform function calls at compile time. This package provides the core functionality for adding support for function decorators to the Typescript toolchain.
 
 Key features:
+
 - Function transformation at compile time
 - Full TypeScript type safety
 - Zero runtime overhead
@@ -19,6 +20,7 @@ Key features:
 A TypeScript language service plugin that provides real-time transformation and IntelliSense support for function decorators in your IDE. This package ensures a seamless development experience when working with function decorators.
 
 Key features:
+
 - Real-time transformation in your editor
 - IntelliSense support
 - Type checking
@@ -45,6 +47,7 @@ npm install -D ts-function-decorator ts-function-decorator-ls ts-patch
 2. Create two TypeScript configuration files:
 
 ### `tsconfig.json` (for IDE support)
+
 ```json
 {
   "compilerOptions": {
@@ -58,6 +61,7 @@ npm install -D ts-function-decorator ts-function-decorator-ls ts-patch
 ```
 
 ### `tsconfig.build.json` (for compilation)
+
 ```json
 {
   "extends": "./tsconfig.json",
