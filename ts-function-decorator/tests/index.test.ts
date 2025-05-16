@@ -83,6 +83,9 @@ describe("Decorator Transformer", () => {
     const printer = ts.createPrinter();
     const transformedCode = printer.printFile(transformedSourceFile!);
 
+    // Debug log to see the actual transformed code
+    console.info("Transformed code:", transformedCode);
+
     // Check for the wrapper function with original parameters
     expect(transformedCode).toContain(
       "function add(a: number, b: number): number",
@@ -125,6 +128,9 @@ describe("Decorator Transformer", () => {
 
     const printer = ts.createPrinter();
     const transformedCode = printer.printFile(transformedSourceFile!);
+
+    // Debug log to see the actual transformed code
+    console.info("Transformed code:", transformedCode);
 
     // Check for the wrapper async function with original parameters
     expect(transformedCode).toContain(
@@ -176,6 +182,9 @@ describe("Decorator Transformer", () => {
 
     const printer = ts.createPrinter();
     const transformedCode = printer.printFile(transformedSourceFile!);
+
+    // Debug log to see the actual transformed code
+    console.info("Transformed code:", transformedCode);
 
     // Check for the wrapper function with original parameters
     expect(transformedCode).toContain(
@@ -353,6 +362,9 @@ describe("Decorator Transformer", () => {
     const printer = ts.createPrinter();
     const transformedCode = printer.printFile(transformedSourceFile!);
 
+    // Debug log to see the actual transformed code
+    console.info("Transformed code:", transformedCode);
+
     // Check for the wrapper function with parameters
     expect(transformedCode).toContain(
       "function complexOperation(x: number, y: string, z: boolean)",
@@ -396,6 +408,9 @@ describe("Decorator Transformer", () => {
     const printer = ts.createPrinter();
     const transformedCode = printer.printFile(transformedSourceFile!);
 
+    // Debug log to see the actual transformed code
+    console.info("Transformed code:", transformedCode);
+
     // Check for the wrapper function without parameters
     expect(transformedCode).toContain("function noParams()");
     // Check for the decorator application wrapping the original function
@@ -434,6 +449,9 @@ describe("Decorator Transformer", () => {
 
     const printer = ts.createPrinter();
     const transformedCode = printer.printFile(transformedSourceFile!);
+
+    // Debug log to see the actual transformed code
+    console.info("Transformed code:", transformedCode);
 
     // Check for the wrapper function with type parameter
     expect(transformedCode).toContain("function genericFunction<T>");
@@ -876,5 +894,142 @@ describe("Decorator Transformer", () => {
       "static staticProperty",
     );
     expect(staticPropertyDecoratorIndex).toBeLessThan(staticPropertyIndex);
+  });
+
+  it("should handle generator functions with decorators", () => {
+    const sourceCode = `
+      function log(target: any) {
+        return function*(...args: any[]) {
+          console.log('Calling generator function with args:', args);
+          yield* target.apply(this, args);
+        };
+      }
+
+      @log
+      function* countTo(n: number): Generator<number> {
+        for (let i = 1; i <= n; i++) {
+          yield i;
+        }
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test-generator.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    // Check for the wrapper generator function with original parameters
+    expect(transformedCode).toContain(
+      "function* countTo(n: number): Generator<number>",
+    );
+    // Check for the decorator application wrapping the original generator function
+    expect(transformedCode).toContain("return log(function* countTo(");
+    // Check that parameters are passed through
+    expect(transformedCode).toContain(")(n)");
+    // Verify the transformed function maintains generator syntax
+    const transformedMatch = /function\* countTo\(n: number\)/.exec(
+      transformedCode,
+    );
+    expect(transformedMatch).toBeTruthy();
+    expect(transformedMatch![0]).toBe("function* countTo(n: number)");
+  });
+
+  it("should handle generic functions with decorators and preserve type parameters", () => {
+    const sourceCode = `
+      function log(target: any) {
+        return function(...args: any[]): any {
+          console.log('Calling function with args:', args);
+          return target.apply(this, args);
+        };
+      }
+
+      @log
+      function genericAdd<T>(a: T, b: T): T {
+        return a;
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test-generic-type.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    // Check for the wrapper function with type parameter
+    expect(transformedCode).toContain("function genericAdd<T>(a: T, b: T): T");
+    // Check for the decorator application wrapping the original function with type parameter
+    expect(transformedCode).toContain(
+      "return log(function genericAdd<T>(a: T, b: T): T",
+    );
+    // Check that parameters are passed through
+    expect(transformedCode).toContain(")(a, b)");
+  });
+
+  it("should handle generic decorators applied to generic functions and preserve type parameters", () => {
+    const sourceCode = `
+      function logWithType<T>(target: any) {
+        return function(...args: any[]): any {
+          console.log('Type:', typeof args[0]);
+          return target.apply(this, args);
+        };
+      }
+
+      @logWithType<number>
+      function identity<T>(value: T): T {
+        return value;
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test-generic-decorator.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    // Check for the wrapper function with type parameter
+    expect(transformedCode).toContain("function identity<T>(value: T): T");
+    // Check for the decorator application wrapping the original function with type parameter
+    expect(transformedCode).toContain(
+      "return logWithType<number>(function identity<T>(value: T): T",
+    );
+    // Check that parameters are passed through
+    expect(transformedCode).toContain(")(value)");
   });
 });

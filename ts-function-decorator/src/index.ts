@@ -87,6 +87,9 @@ function transformAst(this: typeof ts, context: TransformationContext) {
           );
 
           // Create the inner function expression
+          // TODO: Support generator functions
+          // TODO: Verify type parameters
+          const isGenerator = node.asteriskToken !== undefined;
           const innerFunction = context.factory.createFunctionExpression(
             preservedModifiers?.some(
               (m) => m.kind === tsInstance.SyntaxKind.AsyncKeyword,
@@ -97,7 +100,9 @@ function transformAst(this: typeof ts, context: TransformationContext) {
                   ),
                 ]
               : undefined,
-            undefined,
+            isGenerator
+              ? context.factory.createToken(tsInstance.SyntaxKind.AsteriskToken)
+              : undefined,
             originalFunction.name
               ? context.factory.createIdentifier(originalFunction.name.text)
               : undefined,
@@ -158,7 +163,9 @@ function transformAst(this: typeof ts, context: TransformationContext) {
           // Create the final function declaration that calls the decorated function
           return context.factory.createFunctionDeclaration(
             preservedModifiers,
-            undefined,
+            isGenerator
+              ? context.factory.createToken(tsInstance.SyntaxKind.AsteriskToken)
+              : undefined,
             originalFunction.name
               ? context.factory.createIdentifier(originalFunction.name.text)
               : undefined,
