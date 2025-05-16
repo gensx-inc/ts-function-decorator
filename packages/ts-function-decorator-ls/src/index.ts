@@ -92,7 +92,9 @@ function init(_mod: { typescript: typeof ts }) {
         // Filter out unused decorator imports
         if (
           diagnostic.code === 6133 && // TS6133 is the "declared but never read" error code
-          message.includes("is declared but its value is never read")
+          message
+            .toLowerCase()
+            .includes("is declared but its value is never read")
         ) {
           // Extract the symbol name from the message
           const match = /'([^']+)' is declared/.exec(message);
@@ -107,8 +109,8 @@ function init(_mod: { typescript: typeof ts }) {
 
         // Filter out import errors for decorator symbols
         if (
-          message.includes("Cannot find module") ||
-          message.includes("Module not found")
+          message.toLowerCase().includes("cannot find module") ||
+          message.toLowerCase().includes("module not found")
         ) {
           // Check if any of the imported symbols are used as decorators
           const importMatch = /import\s+.*?{([^}]+)}.*?from/.exec(

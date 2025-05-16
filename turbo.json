@@ -10,9 +10,7 @@
         "*.ts",
         "*.tsx",
         "tsconfig.json",
-        "package.json",
-        "rollup.config.js",
-        "$TURBO_ROOT/create-rollup-config.js"
+        "package.json"
       ],
       "dependsOn": ["^build"],
       "outputs": ["./dist/**"]
@@ -26,19 +24,7 @@
     },
     "test": {
       "dependsOn": ["^build", "build"],
-      "outputs": ["coverage/**"],
-      "inputs": [
-        "src/**/*.tsx",
-        "src/**/*.ts",
-        "test/**/*.ts",
-        "test/**/*.tsx"
-      ],
-      "env": ["OPENAI_API_KEY", "FIRECRAWL_API_KEY", "DOCS_URL"]
-    },
-    "start": {
-      "dependsOn": ["^build", "build"],
-      "cache": false,
-      "env": ["*"]
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
     },
     "test:types": {
       "outputs": []
@@ -46,20 +32,6 @@
     "lint:fix": {
       "dependsOn": ["^build"],
       "outputs": []
-    },
-    "create-gensx#test": {
-      "dependsOn": ["^build", "build", "gensx#build", "@gensx/openai#build"],
-      "env": ["OPENAI_API_KEY"]
-    },
-    "gensx-home#build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**"],
-      "env": ["DOCS_URL"]
-    },
-    "gensx-docs#build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**"],
-      "env": ["DOCS_URL"]
     }
   }
 }

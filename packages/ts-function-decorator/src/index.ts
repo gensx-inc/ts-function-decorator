@@ -95,8 +95,6 @@ function transformAst(this: typeof ts, context: TransformationContext) {
           );
 
           // Create the inner function expression
-          // TODO: Support generator functions
-          // TODO: Verify type parameters
           const isGenerator = node.asteriskToken !== undefined;
           const innerFunction = context.factory.createFunctionExpression(
             preservedModifiers?.some(

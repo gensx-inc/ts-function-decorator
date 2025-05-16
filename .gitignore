@@ -1,6 +1,9 @@
-node_modules
-dist
-coverage
-.turbo
+node_modules/
+dist/
+.tmp
+.idea
 .env
-.env.*
+coverage/
+.turbo
+.tsbuildinfo
+.DS_Store
