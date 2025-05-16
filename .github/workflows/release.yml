@@ -15,8 +15,6 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
-    outputs:
-      cli_released: ${{ steps.release.outputs.releases_created && contains(fromJson(steps.release.outputs.paths_released || '[]'), 'packages/gensx') }}
     # Only run on pushes to the original repository and not on forks
     if: |
       github.repository == 'gensx-inc/ts-function-decorator' &&
