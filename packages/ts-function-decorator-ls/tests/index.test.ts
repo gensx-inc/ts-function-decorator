@@ -51,26 +51,12 @@ function createRealLanguageService(
     getCompilationSettings: () => compilerOptions,
     getDefaultLibFileName: ts.getDefaultLibFilePath,
     fileExists: (requestedFileName) => {
-      // eslint-disable-next-line no-console
-      console.log(
-        "fileExists called with:",
-        requestedFileName,
-        fileContents.has(requestedFileName),
-      );
       return fileContents.has(requestedFileName);
     },
     readFile: (requestedFileName) => {
-      // eslint-disable-next-line no-console
-      console.log(
-        "readFile called with:",
-        requestedFileName,
-        fileContents.get(requestedFileName),
-      );
       return fileContents.get(requestedFileName);
     },
     readDirectory: () => {
-      // eslint-disable-next-line no-console
-      console.log("readDirectory called", Array.from(fileContents.keys()));
       return Array.from(fileContents.keys());
     },
   };

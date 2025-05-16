@@ -27,7 +27,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist",
-    "test": "vitest run --coverage",
+    "test": "vitest run",
     "test:watch": "vitest watch",
     "test:types": "tsc --noEmit",
     "lint": "eslint .",
