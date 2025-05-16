@@ -755,4 +755,126 @@ describe("Decorator Transformer", () => {
     expect(transformedCode).toContain("timeout: 1000");
     expect(transformedCode).toContain("retries: 3");
   });
+
+  it("should not interfere with class decorators when experimentalDecorators is true", () => {
+    const sourceCode = `
+      function log(target: any) {
+        return function(...args: any[]) {
+          console.log('Calling function with args:', args);
+          return target.apply(this, args);
+        };
+      }
+
+      @log
+      class TestClass {
+        @log
+        method() {
+          return 'test';
+        }
+
+        @log
+        async asyncMethod() {
+          return 'async test';
+        }
+
+        @log
+        static staticMethod() {
+          return 'static test';
+        }
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    // Verify decorators are present in the correct order
+    const classDecoratorIndex = transformedCode.indexOf("@log");
+    const classIndex = transformedCode.indexOf("class TestClass");
+    expect(classDecoratorIndex).toBeLessThan(classIndex);
+
+    const methodDecoratorIndex = transformedCode.indexOf("@log", classIndex);
+    const methodIndex = transformedCode.indexOf("method()");
+    expect(methodDecoratorIndex).toBeLessThan(methodIndex);
+
+    const asyncMethodDecoratorIndex = transformedCode.indexOf(
+      "@log",
+      methodIndex,
+    );
+    const asyncMethodIndex = transformedCode.indexOf("async asyncMethod()");
+    expect(asyncMethodDecoratorIndex).toBeLessThan(asyncMethodIndex);
+
+    const staticMethodDecoratorIndex = transformedCode.indexOf(
+      "@log",
+      asyncMethodIndex,
+    );
+    const staticMethodIndex = transformedCode.indexOf("static staticMethod()");
+    expect(staticMethodDecoratorIndex).toBeLessThan(staticMethodIndex);
+  });
+
+  it("should not interfere with class property decorators when experimentalDecorators is true", () => {
+    const sourceCode = `
+      function log(target: any) {
+        return function(...args: any[]) {
+          console.log('Calling function with args:', args);
+          return target.apply(this, args);
+        };
+      }
+
+      class TestClass {
+        @log
+        property: string = 'test';
+
+        @log
+        static staticProperty: number = 42;
+      }
+    `;
+
+    const fileName = path.resolve(process.cwd(), "test.ts");
+    const program = ts.createProgram({
+      rootNames: [fileName],
+      options: {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.CommonJS,
+        experimentalDecorators: true,
+      },
+      host: createTestHost(fileName, sourceCode),
+    });
+
+    const transformedProgram = transformer(program, undefined, {}, { ts });
+    const transformedSourceFile = transformedProgram.getSourceFile(fileName);
+    expect(transformedSourceFile).toBeDefined();
+
+    const printer = ts.createPrinter();
+    const transformedCode = printer.printFile(transformedSourceFile!);
+
+    // Verify decorators are present in the correct order
+    const classIndex = transformedCode.indexOf("class TestClass");
+    const propertyDecoratorIndex = transformedCode.indexOf("@log", classIndex);
+    const propertyIndex = transformedCode.indexOf("property: string");
+    expect(propertyDecoratorIndex).toBeLessThan(propertyIndex);
+
+    const staticPropertyDecoratorIndex = transformedCode.indexOf(
+      "@log",
+      propertyIndex,
+    );
+    const staticPropertyIndex = transformedCode.indexOf(
+      "static staticProperty",
+    );
+    expect(staticPropertyDecoratorIndex).toBeLessThan(staticPropertyIndex);
+  });
 });
